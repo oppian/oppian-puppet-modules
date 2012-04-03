@@ -1,0 +1,80 @@
+<% unless aliases.empty? %>
+server {
+  listen 80;
+  server_name<% aliases.each do |a| %> <%= a %><% end %>;
+  rewrite ^ http<% if ssl %>s<% end %>://<%= domain %>$request_uri? permanent;
+}
+<% end %>
+
+<% if ssl %>
+server {
+  listen 80;
+  server_name <%= domain %>;
+  rewrite ^ https://$server_name$request_uri? permanent;
+}
+<% end %>
+
+<% unless upstreams.empty? %>
+upstream <%= name %> {
+  <% upstreams.each do |upstream| %>
+  server <%= upstream %> fail_timeout=0;
+  <% end %>
+}
+<% end %>
+
+server {
+  listen <% if ssl %>443<% else %>80<% end %><% if default_vhost %> default deferred<% end %>;
+  client_max_body_size 4G;
+  server_name <%= domain %>;
+
+  <% if ssl %>
+  ssl on;
+  ssl_certificate <%= ssl_certificate %>;
+  ssl_certificate_key <%= ssl_certificate_key %>;
+  <% end %>
+
+  root <%= root %>;
+
+  access_log  /var/log/nginx/<%= name %>.access.log;
+
+  keepalive_timeout 5;
+
+  <% unless mediaroot.empty? %>
+  location = /favicon.ico {
+    alias <%= absolute_mediaroot %>/favicon.ico;
+    access_log off;
+  }
+
+  location <%= mediaprefix %> {
+    alias <%= absolute_mediaroot %>;
+    expires max;
+    access_log off;
+  }
+  <% end %>
+
+  location / {
+
+    <% unless upstreams.empty? %>
+    try_files $uri @<%= name %>;
+    <% else %>
+    index  index.html;
+      <% if autoindex %>
+    autoindex on;
+      <% end %>
+    <% end %>
+
+    <% if rewrite_missing_html_extension %>
+    try_files $uri $uri/ $uri.html =404;
+    <% end %>
+  }
+
+  <% unless upstreams.empty? %>
+  location @<%= name %> {
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Host $http_host;
+    proxy_redirect off;
+
+    proxy_pass http://<%= name %>;
+  }
+  <% end %>
+}
