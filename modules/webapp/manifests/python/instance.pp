@@ -6,6 +6,7 @@ define webapp::python::instance($domain,
                                 $wsgi_module="",
                                 $django=false,
                                 $django_settings="",
+                                $django_syncdb=false,
                                 $requirements=false,
                                 $pythonpath=[],
                                 $workers=1,
@@ -48,6 +49,16 @@ define webapp::python::instance($domain,
       false => undef,
       default => "$src/$requirements",
     },
+  }
+  
+  if $django_syncdb {
+  	exec { "python::syncdb $name":
+      command => "$venv/bin/python manage.py syncdb --noinput",
+      require => Exec["python::venv $venv"],
+      cwd => $src,
+      user => $owner,
+      group => $group,
+    }
   }
 
   python::gunicorn::instance { $name:
