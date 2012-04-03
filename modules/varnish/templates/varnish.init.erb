@@ -1,0 +1,171 @@
+#! /bin/sh
+#
+# varnish Control the varnish HTTP accelerator
+#
+# chkconfig: - 90 10
+# description: Varnish is a high-perfomance HTTP accelerator
+# processname: varnishd
+# config: /etc/sysconfig/varnish
+# pidfile: /var/run/varnish/varnishd.pid
+
+### BEGIN INIT INFO
+# Provides: varnish
+# Required-Start: $network $local_fs $remote_fs
+# Required-Stop: $network $local_fs $remote_fs
+# Default-Start:
+# Default-Stop:
+# Should-Start: $syslog
+# Short-Description: start and stop varnishd
+# Description: Varnish is a high-perfomance HTTP accelerator
+### END INIT INFO
+
+# Source function library.
+. /etc/init.d/functions
+
+retval=0
+pidfile=/var/run/varnish.pid
+
+exec="/usr/sbin/varnishd"
+reload_exec="/usr/sbin/varnish_reload_vcl"
+prog="varnishd"
+config="/etc/sysconfig/varnish"
+lockfile="/var/lock/subsys/varnish"
+
+NFILES=131072
+MEMLOCK=82000
+RELOAD_VCL=1
+VARNISH_VCL_CONF=/etc/varnish/default.vcl
+VARNISH_LISTEN_PORT=<%= port %>
+VARNISH_ADMIN_LISTEN_ADDRESS=127.0.0.1
+VARNISH_ADMIN_LISTEN_PORT=6082
+VARNISH_SECRET_FILE=/etc/varnish/secret
+VARNISH_MIN_THREADS=1
+VARNISH_MAX_THREADS=1000
+VARNISH_THREAD_TIMEOUT=120
+VARNISH_STORAGE_SIZE=<%= size %>
+VARNISH_STORAGE="malloc,${VARNISH_STORAGE_SIZE}"
+VARNISH_TTL=120
+DAEMON_OPTS="-a ${VARNISH_LISTEN_ADDRESS}:${VARNISH_LISTEN_PORT} \
+             -f ${VARNISH_VCL_CONF} \
+             -T ${VARNISH_ADMIN_LISTEN_ADDRESS}:${VARNISH_ADMIN_LISTEN_PORT} \
+             -t ${VARNISH_TTL} \
+             -w ${VARNISH_MIN_THREADS},${VARNISH_MAX_THREADS},${VARNISH_THREAD_TIMEOUT} \
+             -u varnish -g varnish \
+             -S ${VARNISH_SECRET_FILE} \
+             -s ${VARNISH_STORAGE}"
+
+
+start() {
+
+	if [ ! -x $exec ]
+	then
+		echo $exec not found
+		exit 5
+	fi
+
+	if [ ! -f $config ]
+	then
+		echo $config not found
+		exit 6
+	fi
+	echo -n "Starting varnish HTTP accelerator: "
+
+	# Open files (usually 1024, which is way too small for varnish)
+	ulimit -n ${NFILES:-131072}
+
+	# Varnish wants to lock shared memory log in memory. 
+	ulimit -l ${MEMLOCK:-82000}
+
+        # $DAEMON_OPTS is set in /etc/sysconfig/varnish. At least, one
+        # has to set up a backend, or /tmp will be used, which is a bad idea.
+	if [ "$DAEMON_OPTS" = "" ]; then
+		echo "\$DAEMON_OPTS empty."
+		echo -n "Please put configuration options in $config"
+		return 6
+	else
+		# Varnish always gives output on STDOUT
+		daemon   $exec -P $pidfile "$DAEMON_OPTS" > /dev/null 2>&1
+		retval=$?
+		if [ $retval -eq 0 ]
+		then
+			touch $lockfile
+			echo_success
+			echo
+		else
+			echo_failure
+			echo
+		fi
+		return $retval
+	fi
+}
+
+stop() {
+	echo -n "Stopping varnish HTTP accelerator: "
+	killproc $prog
+	retval=$?
+	echo
+	[ $retval -eq 0 ] && rm -f $lockfile
+	return $retval
+}
+
+restart() {
+	stop
+	start
+}
+
+reload() {
+	if [ "$RELOAD_VCL" = "1" ]
+	then
+		$reload_exec
+	else
+		force_reload
+	fi
+}
+
+force_reload() {
+	restart
+}
+
+rh_status() {
+	status $prog
+}
+
+rh_status_q() {
+	rh_status >/dev/null 2>&1
+}
+
+# See how we were called.
+case "$1" in
+	start)
+		rh_status_q && exit 0
+		$1
+		;;
+	stop)
+		rh_status_q || exit 0
+		$1
+		;;
+	restart)
+		$1
+		;;
+	reload)
+		rh_status_q || exit 7
+		$1
+		;;
+	force-reload)
+		force_reload
+		;;
+	status)
+		rh_status
+		;;
+	condrestart|try-restart)
+		rh_status_q || exit 0
+		restart
+		;;
+	*)
+	echo "Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+
+	exit 2
+esac
+
+exit $?
+
