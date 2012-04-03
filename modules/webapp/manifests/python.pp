@@ -5,7 +5,13 @@ class webapp::python($ensure=present,
                      $venv_root="/usr/local/venv",
                      $nginx_workers=1,
                      $monit_admin="",
-                     $monit_interval=60) {
+                     $monit_interval=60) {     
+                     
+  package { "mysql": }
+
+  package { "mysql-devel": 
+    require => Package["mysql"],
+  }
 
   class { "nginx":
     ensure => $ensure,
@@ -15,6 +21,7 @@ class webapp::python($ensure=present,
 
   class { "python::dev":
     ensure => $ensure,
+    require => Package["mysql"],
   }
 
   class { "python::venv":

@@ -52,9 +52,10 @@ define webapp::python::instance($domain,
   }
   
   if $django_syncdb {
-  	exec { "python::syncdb $name":
+    exec { "python::syncdb $name":
       command => "$venv/bin/python manage.py syncdb --noinput",
-      require => Exec["python::venv $venv"],
+      require => Python::Venv::Isolate[$venv],
+      before => Python::Gunicorn::Instance[$name],
       cwd => $src,
       user => $owner,
       group => $group,
