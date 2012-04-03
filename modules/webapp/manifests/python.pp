@@ -16,7 +16,7 @@ class webapp::python($ensure=present,
   class { "nginx":
     ensure => $ensure,
     workers => $nginx_workers,
-    user => $owner
+    user => $owner,
   }
 
   class { "python::dev":

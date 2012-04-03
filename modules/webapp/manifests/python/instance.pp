@@ -10,6 +10,7 @@ define webapp::python::instance($domain,
                                 $requirements=false,
                                 $pythonpath=[],
                                 $workers=1,
+                                $listen_port=80,
                                 $timeout_seconds=30,
                                 $monit_memory_limit=300,
                                 $monit_cpu_limit=50) {
@@ -39,6 +40,7 @@ define webapp::python::instance($domain,
     upstreams => ["unix:${socket}"],
     owner => $owner,
     group => $group,
+    listen_port => $listen_port,
     require => Python::Gunicorn::Instance[$name],
   }
 
