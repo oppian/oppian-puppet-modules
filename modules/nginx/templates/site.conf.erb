@@ -1,6 +1,6 @@
 <% unless aliases.empty? %>
 server {
-  listen 80;
+  listen <%= listen_port %>;
   server_name<% aliases.each do |a| %> <%= a %><% end %>;
   rewrite ^ http<% if ssl %>s<% end %>://<%= domain %>$request_uri? permanent;
 }
@@ -8,7 +8,7 @@ server {
 
 <% if ssl %>
 server {
-  listen 80;
+  listen <%= listen_port %>;
   server_name <%= domain %>;
   rewrite ^ https://$server_name$request_uri? permanent;
 }
@@ -23,7 +23,7 @@ upstream <%= name %> {
 <% end %>
 
 server {
-  listen <% if ssl %>443<% else %>80<% end %><% if default_vhost %> default deferred<% end %>;
+  listen <% if ssl %>443<% else %><%= listen_port %><% end %><% if default_vhost %> default deferred<% end %>;
   client_max_body_size 4G;
   server_name <%= domain %>;
 
