@@ -46,6 +46,7 @@ set daemon  <%= interval %> # check services at N-second intervals
 ## specified using a comma separator. By default Monit uses port 25 - it is
 ## possible to override this with the PORT option.
 #
+set mailserver localhost
 # set mailserver mail.bar.baz,               # primary mailserver
 #                backup.bar.baz port 10025,  # backup mailserver on port 10025
 #                localhost                   # fallback relay

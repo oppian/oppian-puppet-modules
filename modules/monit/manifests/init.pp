@@ -21,6 +21,10 @@ class monit($ensure=present, $admin="", $interval=60) {
       ensure => $ensure,
       source => "puppet:///modules/monit/monit.logrotate",
       require => Package[monit];
+
+    "/var/lib/monit":
+      ensure => directory;
+
   }
 
   service { "monit":
@@ -33,6 +37,7 @@ class monit($ensure=present, $admin="", $interval=60) {
     },
     subscribe => File["/etc/monit.conf"],
     require => [File["/etc/monit.conf"],
-                File["/etc/logrotate.d/monit"]],
+                File["/etc/logrotate.d/monit"],
+                File["/var/lib/monit"]],
   }
 }

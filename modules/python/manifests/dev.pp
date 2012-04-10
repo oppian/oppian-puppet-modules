@@ -10,9 +10,13 @@ class python::dev($ensure=present, $version=latest) {
     ensure => $ensure,
   }
   
+  package { "${python}":
+    ensure => $ensure,
+  }
+  
   package { "system-release" :
     ensure => 'latest',
-    before => Package['python-devel'],
+    before => [ Package['python-devel'], Package[$python], Package['python-virtualenv'] ]
   }
   
 }
