@@ -13,6 +13,7 @@ define webapp::python::instance($domain,
                                 $listen_port=80,
                                 $timeout_seconds=30,
                                 $monit_memory_limit=300,
+                                $default_vhost=false,
                                 $monit_cpu_limit=50) {
 
   $venv = "${webapp::python::venv_root}/$name"
@@ -42,6 +43,7 @@ define webapp::python::instance($domain,
     group => $group,
     listen_port => $listen_port,
     require => Python::Gunicorn::Instance[$name],
+    default_vhost => $default_vhost,
   }
 
   python::venv::isolate { $venv:

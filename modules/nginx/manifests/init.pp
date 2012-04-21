@@ -9,6 +9,7 @@ class nginx($workers=1, $ensure=present, $user="www-user") {
     "/etc/nginx/nginx.conf":
       ensure => $ensure,
       content => template("nginx/nginx.conf.erb"),
+      before => Service[nginx],
       require => Package[nginx];
 
     "/etc/nginx/mime.types":

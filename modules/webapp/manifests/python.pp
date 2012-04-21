@@ -21,7 +21,7 @@ class webapp::python($ensure=present,
 
   class { "python::dev":
     ensure => $ensure,
-    require => Package["mysql"],
+    require => Package["mysql-devel"],
   }
 
   class { "python::venv":
