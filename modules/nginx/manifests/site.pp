@@ -15,8 +15,6 @@ define nginx::site($domain,
                    $ssl_certificate="",
                    $ssl_certificate_key="") {
 
-  $absolute_mediaroot = inline_template("<%= File.expand_path(mediaroot, root) %>")
-
   if $ensure == 'present' {
     # Parent directory of root directory. /var/www for /var/www/blog
     $root_parent = inline_template("<%= root.match(%r!(.+)/.+!)[1] %>")
@@ -34,6 +32,10 @@ define nginx::site($domain,
       owner => $owner,
       group => $group,
       require => File[$root_parent],
+    }
+    
+    monit::monitor { "nginx":
+      pidfile => "/var/run/nginx.pid",
     }
 
   } elsif $ensure == 'absent' {
