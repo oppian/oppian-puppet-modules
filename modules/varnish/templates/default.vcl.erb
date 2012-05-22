@@ -13,6 +13,21 @@ backend default {
 # redefine any of these subroutines, the built-in logic will be
 # appended to your code.
 # 
+
+sub vcl_recv {
+  if (req.url ~ "<%= media_url %>") {
+    unset req.http.Cookie;
+  }
+  if (req.http.Cookie) {
+    set req.http.Cookie = regsuball(req.http.Cookie, "(^|; ) *__utm.=[^;]+;? *", "\1"); # removes all cookies named __utm? (utma, utmb...) - tracking thing
+    set req.http.Cookie = regsuball(req.http.Cookie, "(^|; ) *ELBAWS=[^;]+;? *", "\1"); # removes ELB cookie
+
+    if (req.http.Cookie == "") {
+        remove req.http.Cookie;
+    }
+  }
+}
+
 # sub vcl_recv {
 #     if (req.restarts == 0) {
 # 	if (req.http.x-forwarded-for) {
